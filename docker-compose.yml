@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3009:3009"
+    depends_on:
+      - rabbitmq
+      - dynamodb
+      - redis
+      - prometheus
+      - grafana
+      
+rabbitmq:
+  image: rabbitmq:3-management
+  container_name: rabbitmq
+  ports:
+    - "5672:5672" # AMQP
+    - "15672:15672" # Management UI
+  environment:
+    RABBITMQ_DEFAULT_USER: admin
+    RABBITMQ_DEFAULT_PASS: secretpassword
+  volumes:
+    - rabbitmq_data:/var/lib/rabbitmq # Data persistence
+  restart: unless-stopped
+
+dynamodb:
+  image: amazon/dynamodb-local
+  container_name: my-dynamodb
+  volumes:
+    - dynamodb_data:/home/dynamodblocal/data # Data persistence
+  ports:
+    - "8000:8000" # Access port
+  command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data/"
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3010:3000"
+volumes:
+  rabbitmq_data:
+  dynamodb_data:
